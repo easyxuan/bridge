@@ -1,0 +1,272 @@
+jdk安装
+安装zookeeper
+环境变量
+conf目录下：	
+	cp zoo_sample.cfg zoo.cfg
+修改zoo.cfg
+	dataDir=/home/tellhow-iot2/doc/zookeeper-3.4.13/tmp
+	dataLogDir=/home/tellhow-iot2/doc/zookeeper-3.4.13/logs
+创建tmp和logs
+bin下./zkServer.sh start启动 ./zkServer.sh status查看启动状态
+
+
+hadoop伪分布式安装
+配置环境变量：$HADOOP_HOME=...   ${HADOOP_HOME}/bin
+	source ~/.profile
+配置免密登录
+	ssh-keygen
+	ssh-copy-id localhost@127.0.0.1
+关闭防火墙
+配置hadoop-env.sh
+	export JAVA_HOME=/usr/java/jdk1.8.0_111 设置成为具体路径
+配置yarn-env.sh
+	JAVA_HOME=/usr/java/jdk1.8.0_111 为具体路径
+配置core-site.xml
+	<!-- 指定HDFS老大（namenode）的通信地址 -->
+        <property>
+                <name>fs.defaultFS</name>
+                <value>hdfs://localhost:9000</value>
+        </property>
+        <!-- 指定hadoop运行时产生文件的存储目录 -->
+        <property>
+                <name>hadoop.tmp.dir</name>
+                <value>/home/lyh/hadoop_tmp</value>
+        </property>
+
+配置hdfs-site.xml
+	<!-- 指定HDFS副本的数量 -->
+        <property>
+                <name>dfs.replication</name>
+                <value>1</value>
+        </property>
+
+配置yarn-site.xml
+	<property> 
+		<name>yarn.nodemanager.aux-services</name> 
+		<value>mapreduce_shuffle</value> 
+	</property> 
+	<property> 
+		<name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name> 
+		<value>org.apache.hadoop.mapred.ShuffleHandler</value> 
+	</property> 
+	<property> 
+		<name>yarn.resourcemanager.address</name> 
+		<value>127.0.0.1:8032</value> 
+	</property> 
+	<property> 
+		<name>yarn.resourcemanager.scheduler.address</name> 
+		<value>127.0.0.1:8030</value> 
+	</property> 
+	<property> 
+		<name>yarn.resourcemanager.resource-tracker.address</name> 
+		<value>127.0.0.1:8031</value> 
+	</property>
+
+配置 mapred-site.xml
+<property> 
+	<!-- 指定mapreduce运行在yarn上 -->
+	<name>mapreduce.framework.name</name> 
+	<value>yarn</value> 
+</property>
+最好重启电脑！！！
+	hadoop version 测试是否安装成功
+在bin目录下执行，提示"……has been successfully formatted" 等字样出现即说明格式化成功
+	hadoop hdfs namenode -format
+在sbin启动
+	start-all.sh
+jps查看有5个进程SecondaryNameNode、DataNode、NodeManager、ResourceManager、NameNode表示成功
+访问http://localhost:50070
+
+安装mysql
+	sudo apt-get install mysql-server
+	sudo apt-get install mysql-client
+	sudo apt-get install libmysqlclient-dev
+检查是否安装成功：
+	sudo netstat -tap | grep mysql
+登录验证：
+mysql -u root -p
+
+安装Hive
+环境变量
+/conf目录下：
+	cp hive-env.sh.template hive-env.sh
+	cp hive-default.xml.template hive-site.xml
+	cp hive-log4j2.properties.template hive-log4j2.properties
+	cp hive-exec-log4j2.properties.template hive-exec-log4j2.properties
+在hdfs目录下建立三个文件，用来存放hive信息，并赋予777权限
+	hdfs dfs -mkdir -p /user/hive/warehouse
+	hdfs dfs -mkdir -p /user/hive/tmp
+	hdfs dfs -mkdir -p /user/hive/log
+	hdfs dfs -chmod -R 777 /user/hive/warehouse
+	hadoop fs -chmod 777 /user/hive/tmp
+	hdfs dfs -chmod -R 777 /user/hive/tmp 
+	hdfs dfs -chmod -R 777 /user/hive/log
+修改hive-env.sh文件
+	export JAVA_HOME=/usr/java/jdk1.7.0_79
+	export HADOOP_HOME=/usr/local/hadoop
+	export HIVE_HOME=/usr/local/hive
+	export HIVE_CONF_DIR=/usr/local/hive/conf 
+修改hive-site.xml文件
+	<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+	<configuration> 
+	    <property>
+	    <name>hive.exec.scratchdir</name>
+	    <value>/user/hive/tmp</value>
+	</property>
+	<property>
+	    <name>hive.metastore.warehouse.dir</name>
+	    <value>/user/hive/warehouse</value>
+	</property>
+	<property>
+	    <name>hive.querylog.location</name>
+	    <value>/user/hive/log</value>
+	</property>
+
+	<property>
+	    <name>javax.jdo.option.ConnectionURL</name>
+	    <value>jdbc:mysql://localhost:3306/hive?createDatabaseIfNotExist=true&amp;characterEncoding=UTF-8&amp;useSSL=false</value>
+	  </property>
+	  <property>
+	    <name>javax.jdo.option.ConnectionDriverName</name>
+	    <value>com.mysql.jdbc.Driver</value>
+	  </property>
+	  <property>
+	    <name>javax.jdo.option.ConnectionUserName</name>
+	    <value>root</value>
+	  </property>
+	  <property>
+	    <name>javax.jdo.option.ConnectionPassword</name>
+	    <value>admin123</value>
+	  </property>
+	</configuration>
+hive目录下创建tmp文件
+将mysql-connector-java-5.1.10-bin.jar放入lib目录下
+初始化hive，在hive2.0以后的版本，初始化命令都是：
+schematool -dbType mysql -initSchema
+或者
+在mysql命令下执行
+	#创建数据库
+	mysql> create database hive;
+	#赋予访问权限
+	mysql> grant all privileges on hive.* to root@localhost identified by '密码' with grant option;
+	mysql> flush privileges;
+
+bin目录下执行hive启动
+
+
+
+安装Flume
+配置环境变量
+简单示例：在conf文件中 cp flume-conf.properties.template flume-conf.properties
+vim flume-conf.properties 如下：删除所有内容
+a1.sources = r1
+a1.sinks = k1
+a1.channels = c1
+
+a1.sources.r1.type = avro
+a1.sources.r1.bind = 0.0.0.0
+a1.sources.r1.port = 44444
+
+a1.sinks.k1.type = hdfs
+a1.sinks.k1.hdfs.path = hdfs://localhost:9000/test
+a1.sinks.k1.hdfs.fileType = DataStream
+a1.sinks.k1.hdfs.rollInterval = 0
+a1.sinks.k1.hdfs.rollSize = 0
+a1.sinks.k1.hdfs.rollCount = 1000
+
+a1.channels.c1.type = memory
+a1.channels.c1.capacity = 1000
+a1.channels.c1.transactionCapacity = 100
+
+a1.sources.r1.channels = c1
+a1.sinks.k1.channel = c1
+
+启动flume：
+	flume-ng agent --conf ../conf --conf-file ../conf/flume-conf.properties --name a1 -Dflume.root.logger=INFO,console
+
+创建一个test.txt写些内容文件用于测试
+测试：
+	./flume-ng avro-client --conf ../conf --host 0.0.0.0 --port 44444 --filename ../../test.txt
+
+ps -aux | grep flume
+
+
+安装kafka
+kafka目录下创建日志路径
+mkdir logs
+vim config/server.properties修改配置文件中21、31、36和60行：
+	broker.id=1
+	listeners=PLAINTEXT://:9092
+	advertised.listeners=PLAINTEXT://host_ip:9092
+	log.dirs=/home/wzj/kafka/logs-1
+启动zookeeper验证
+bin/kafka-server-start.sh config/server.properties
+创建主题
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+查看列表
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+生产者
+./kafka-console-producer.sh --broker-list localhost:9092 --topic test
+消费者
+./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+查看Topic消息
+bin/kafka-topics.sh --describe --zookeeper localhost:2181 --topic test
+第一行给出了所有分区的摘要，每个附加行给出了关于一个分区的信息。 由于我们只有一个分区，所以只有一行。
+    “Leader”: 是负责给定分区的所有读取和写入的节点。 每个节点将成为分区随机选择部分的领导者。
+    “Replicas”: 是复制此分区日志的节点列表，无论它们是否是领导者，或者即使他们当前处于活动状态。
+    “Isr”: 是一组“同步”副本。这是复制品列表的子集，当前活着并被引导到领导者。
+
+
+安装storm（jdk、zookeeper）
+修改storm.yaml
+	storm.zookeeper.servers:
+      		- "127.0.0.1"
+	storm.zookeeper.port: 2181
+	supervisor.slots.ports:
+		- 6700
+		- 6701
+		- 6702
+		- 6703
+		- 6704
+	storm.local.dir: "/home/tellhow-iot2/doc/apache-storm-1.2.2/data"
+	nimbus.seeds: ["127.0.0.1"]
+启动storm
+	启动niumbus
+	./bin/storm nimbus >> logs/nimbus.out 2>&1 &
+	tail -f logs/nimbus.log
+	启动UI
+	./bin/storm ui>> logs/ui.out 2>&1 &
+	tail -f logs/ui.log
+	启动supervisor
+	./bin/storm supervisor >> logs/supervisor.out 2>&1 &
+	tail -f logs/supervisor.log
+	启动logviewer
+	./bin/storm logviewer>> logs/logviewer.out 2>&1 &
+	tail -f logs/logviewer.log
+	验证：浏览器打开webUI，http://spark001:8080
+	启动topology
+	./bin/storm jar examples/storm-starter/storm-starter-topologies-0.9.5.jar storm.starter.WordCountTopologywordcount
+
+
+安装hbase
+修改conf下的hbase-env.sh：
+	export JAVA_HOME=/home/tellhow-iot2/doc/jdk1.8.0_65
+修改conf下的hbase-site.xml：
+	<property>
+                <name>hbase.rootdir</name>
+                <value>file:/home/tellhow-iot2/doc/hbase-1.3.3/hbasetmp</value>
+        </property>
+        <property>
+                <name>hbase.zookeeper.property.dataDir</name>
+                <value>file:/home/tellhow-iot2/doc/hbase-1.3.3/zookeepertmp</value>
+        </property>
+环境变量
+启动：start-hbase.sh
+HBase Shell
+
+
+
+
+
+
